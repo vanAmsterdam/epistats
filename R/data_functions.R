@@ -92,12 +92,16 @@ na2missing <- function(x, label = "missing", ifany = T) {
 #' @param x a vector to recode to quantiles
 #' @param n.tiles the number of quantiles (so 4 = quartiles, 5 = quintiles, etc)
 #' @param probs optional: provide explicit probabilities
+#' @param label a prefix for groups. Set to "none" to return the ranges
+#' @return an ordered factor
 #' @seealso \code{\link{cut}} \code{\link{quantile}}
 #' @export
-quant <- function(x, n.tiles = 4, probs = "") {
-  if (probs == "") probs = seq(0, 1, length.out = n.tiles + 1)
+quant <- function(x, n.tiles = 4, probs = NULL, label = "q") {
+  if (is.null(probs)) probs = seq(0, 1, length.out = n.tiles + 1)
   breaks = quantile(x, probs = probs, na.rm = T)
-  cut(x, breaks = breaks, include.lowest = T, ordered_result = T)
+  out = cut(x, breaks = breaks, include.lowest = T, ordered_result = T)
+  if (label == "none") return(out)
+  return(factor(out, levels = levels(out), labels = paste0(label, 1:n.tiles)))
 }
 
 

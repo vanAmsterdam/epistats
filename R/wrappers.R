@@ -58,7 +58,7 @@ myround <-
 #' @seealso \code{\link{xtabs}}, \code{\link{addmargins}}
 #' @export
 #'
-mtable <- function(margin = 1, ...) {
+mtable <- function(..., margin = 1) {
   tab <- table(...)
   tab <- addmargins(tab, margin = margin)
   return(tab)
