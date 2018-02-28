@@ -1,3 +1,70 @@
+#' Print coefficients of a fit
+#'
+#' Grab exponentiaded coefficients of a glm fit and print them,
+#' with or without confidence interval
+#'
+#' @author Wouter van Amsterdam
+#' @param fit the model fit, a result of \code{\link{glm}}
+#' @param term an integer, supplying the index of the required coefficient
+#' @param print_ci include the confidence interval
+#' @param alpha the confidence level (1 - coverage) for the confidence interval
+#' @param ... further formatting options for \code{\link{print.ci}}
+
+print_coef <- function(fit, term, print_ci = T, alpha = 0.05,
+                       ...) {
+  coefs <- extract_RR(fit = fit, alpha = alpha)[term,]
+  print.ci(coefs, ...)
+}
+
+#' Myround
+#'
+#' Round a number, preserving extra 0's
+#'
+#' Round a number, preserving extra 0's.
+#'
+#' @author kbroman
+#' @references \link{https://github.com/kbroman/broman/blob/master/R/myround.R}
+#' @param x Number to round.
+#' @param digits Number of digits past the decimal point to keep.
+#' @details
+#' Uses \code{\link[base]{sprintf}} to round a number, keeping extra 0's.
+#'
+#' @export
+#' @return
+#' A vector of character strings.
+#'
+#' @examples
+#' myround(51.01, 3)
+#' myround(0.199, 2)
+#'
+#' @seealso
+#' \code{\link[base]{round}}, \code{\link[base]{sprintf}}
+#'
+#' @keywords
+#' utilities
+myround <-
+  function(x, digits=1)
+  {
+    if(digits < 1)
+      stop("This is intended for the case digits >= 1.")
+
+    if(length(digits) > 1) {
+      digits <- digits[1]
+      warning("Using only digits[1]")
+    }
+
+    if (is.character(x)) return(x)
+
+    tmp <- sprintf(paste("%.", digits, "f", sep=""), x)
+
+    # deal with "-0.00" case
+    zero <- paste0("0.", paste(rep("0", digits), collapse=""))
+    tmp[tmp == paste0("-", zero)] <- zero
+
+    tmp
+  }
+
+
 #' Lexical printing of estimates with confidence intervals for a matrix of values
 #'
 #' Print an estimate with confidence interval for a matrix of values
@@ -8,7 +75,9 @@
 #' @export
 #' @author Wouter van Amsterdam
 print.ci.matrix <- function(x, add_percentage = F, digits = 1) {
-  apply(x, 1, function(y) print.ci(y[1], y[2], y[3],
+  apply(x, 1, function(y) print.ci(estimate = y[1],
+                                   ci_low = y[2],
+                                   ci_high = y[3],
                                    add_percentage = add_percentage,
                                    digits = digits))
 }
@@ -17,19 +86,32 @@ print.ci.matrix <- function(x, add_percentage = F, digits = 1) {
 #'
 #' Print an estimate with confidence interval
 #'
-#' @param estimate a numeric estimate
-#' @param ci.low lower bound of estimate
-#' @param ci.high upper bound of estimate
+#' @param x a numeric vector of length 3, with estimate, lower bound for
+#' confidence interval, upper bound for confidence interval, in that order.
+#' Supply x or \code{estimate, ci_low, ci_high}
+#' @param estimate a numeric estimate, supply only when \code{x == NULL}
+#' @param ci_low lower bound of estimate, supply only when \code{x == NULL}
+#' @param ci_high upper bound of estimate, supply only when \code{x == NULL}
 #' @param add_percentage multiply with 100 and add % after values?
 #' @param digits an integer vector of length 1, how many digits to round to?
 #' @export
 #' @author Wouter van Amsterdam
-print.ci <- function(estimate, ci.low, ci.high, add_percentage = F, digits = 1) {
+print.ci <- function(x = NULL,
+                     estimate = NULL, ci_low = NULL, ci_high = NULL,
+                     add_percentage = F, digits = 1) {
+  if (!is.null(x) & !is.null(c(estimate, ci_low, ci_high))) {
+    stop("Please provide x, or estimate, ci_low and ci_high, not both")
+  }
+  if (!is.null(x)) {
+    estimate = x[1]
+    ci_low   = x[2]
+    ci_high  = x[3]
+  }
   output <- ifelse(add_percentage,
                    paste0(myround(100*estimate, digits),
-                          "% (", myround(100*ci.low, digits), "% - ", myround(100*ci.high, digits), "%)"),
+                          "% (", myround(100*ci_low, digits), "% - ", myround(100*ci_high, digits), "%)"),
                    paste0(myround(estimate, digits),
-                          " (", myround(ci.low, digits), " - ", myround(ci.high, digits), ")"))
+                          " (", myround(ci_low, digits), " - ", myround(ci_high, digits), ")"))
   return(output)
 }
 

@@ -1,52 +1,33 @@
+#' Extract coefficients and confidence intervals from a fit
+#'
+#' Extract coefficients and confidence intervals from a fit, based on the
+#' Wald approximation.
+#'
+#' @author ? and Wouter van Amsterdam
+#' @references function modified from excercises in the Advanced
+#' methods in causal research course from the Julius Center Utrecht, the Netherlands
+#' @param fit the result of \code{glm} or \code{lm}
+#' @param alpha required confidence level (coverage) for interval
+#' @param return_terms return terms as in a separate column?
+#' @return a matrix with first column the estimate, 2nd column CI-low, 3d column CI-high
 
+extract_RR <- function(fit, alpha = 0.05, return_terms = F){
 
-#' Myround
-#'
-#' Round a number, preserving extra 0's
-#'
-#' Round a number, preserving extra 0's.
-#'
-#' @author kbroman
-#' @references \link{https://github.com/kbroman/broman/blob/master/R/myround.R}
-#' @param x Number to round.
-#' @param digits Number of digits past the decimal point to keep.
-#' @details
-#' Uses \code{\link[base]{sprintf}} to round a number, keeping extra 0's.
-#'
-#' @export
-#' @return
-#' A vector of character strings.
-#'
-#' @examples
-#' myround(51.01, 3)
-#' myround(0.199, 2)
-#'
-#' @seealso
-#' \code{\link[base]{round}}, \code{\link[base]{sprintf}}
-#'
-#' @keywords
-#' utilities
-myround <-
-  function(x, digits=1)
-  {
-    if(digits < 1)
-      stop("This is intended for the case digits >= 1.")
-
-    if(length(digits) > 1) {
-      digits <- digits[1]
-      warning("Using only digits[1]")
+  coefs = exp(fit$coef);
+  se    = diag(vcov(fit))
+  ci_lo = coefs - qnorm(1 - alpha / 2) * sqrt(se)
+  ci_hi = coefs + qnorm(1 - alpha / 2) * sqrt(se)
+  if (!return_terms) {
+    return(data.frame(estimate = coefs,
+                      ci_low = ci_lo,
+                      ci_high = ci_hi))
     }
-
-    if (is.character(x)) return(x)
-
-    tmp <- sprintf(paste("%.", digits, "f", sep=""), x)
-
-    # deal with "-0.00" case
-    zero <- paste0("0.", paste(rep("0", digits), collapse=""))
-    tmp[tmp == paste0("-", zero)] <- zero
-
-    tmp
+  data.frame(term = names(coefs),
+             estimate = coefs,
+             ci_low = ci_lo,
+             ci_high = ci_hi)
   }
+
 
 #' Create a table with margins
 #'

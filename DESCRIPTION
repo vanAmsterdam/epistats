@@ -1,6 +1,6 @@
 Package: epistats
 Type: Package
-Title: Tools for epidemiology and statistics
+Title: Tools for epidemiology and statistics, and writing (scientific papers) with R-markdown.
 Version: 0.1.0
 Author: Wouter van Amsterdam
 Maintainer: Wouter van Amsterdam <w.a.c.vanamsterdam@gmail.com>

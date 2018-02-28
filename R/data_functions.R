@@ -1,4 +1,69 @@
+#' Fill missing values in vectors by last non-empty entry
+#'
+#' Fill missing values in vectors by last non-empty entry
+#'
+#' @author Wouter van Amsterdam
+#' @param x a vector (with possible missing values)
+#' @param first_to_last a logical, indicating whether to go from first to
+#' last or last to first
+#' @return a vector with no missing values
+#' @export
+#'
 
+fill_recursive <- function(x, first_to_last = TRUE) {
+  ### to-do: write a vectorize version of this function
+
+  if (!first_to_last) x = rev(x)
+
+  x_prev = x[1]
+  if (is.na(x_prev)) warning("first value of x is missing, don't know how to handle those")
+
+  for (i in 2:length(x)) {
+    if (is.na(x[i])) {
+      x[i] <- x_prev
+    } else {
+      x_prev = x[i]
+    }
+  }
+
+  if (!first_to_last) x = rev(x)
+
+  x
+}
+
+
+#' Recode 2 factor variables into 1
+#'
+#' Recode 2 factor variables into 1
+#'
+#' @author Wouter van Amsterdam
+#' @param data a named list or data frame with factors of length 2
+#' @param informative_labels return factor levels based on the original labels
+#' or just group numbers?
+#' @param missing_as_level treat missings as a category or return \code{NA}
+#' @return a factor with \code{nlevels(x1)*nlevels(x2)} levels.
+#' @export
+#'
+
+recode_2_factors <- function(data, informative_labels = TRUE,
+                             missing_as_level = FALSE) {
+  if (!is.list(data) | is.null(names(data))) stop("please provide a dataframe or named list")
+  if (length(data) > 2) warning("using only first two columns")
+
+  if (!is.data.frame(data)) data = as.data.frame(data)
+
+  x_names <- names(data)
+
+  x <- data[[1]]
+  y <- data[[2]]
+
+  out <- factor(glue::glue('{x_names[1]}{x}{x_names[2]}{y}'))
+
+  if (!missing_as_level) out[!complete.cases(data)] <- NA
+
+  if (informative_labels) return(out)
+  as.numeric(out)
+}
 
 #' Convert SPSS dates to Dates
 #'
@@ -57,8 +122,8 @@ is.true <- function(x) {!is.na(x) & x}
 #' @return a factor vector
 #' @export
 #' @seealso \code{\link{as.factor}}, \code{\link{na2missing}}
-logical2factor <- function(x, labels = c("yes", "no"), na_label = "missing") {
-  x <- factor(x, levels = c(T, F), labels = labels)
+logical2factor <- function(x, labels = c("no", "yes"), na_label = "missing") {
+  x <- factor(x, levels = c(F, T), labels = labels)
   if (!is.null(na_label)) x <- na2missing(x, label = na_label)
   return(x)
 }
