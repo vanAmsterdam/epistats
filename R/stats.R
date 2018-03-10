@@ -1,3 +1,42 @@
+#' Partial residuals of a linear regression fit
+#'
+#' Partial residual of a linear regression fit
+#'
+#' @author Wouter van Amsterdam
+#' @export
+#' @param fit the result of a call to \code{\link{lm}}
+#' @param term the term for which to got the partial residuals, see details
+#' @param resid_type type of residuals, gets passed to \code{\link{resid}}
+#' @return a \code{data.frame} with the results from the partial model of
+#' the response (including all terms except for \code{term}) and the
+#' residuals of the partial model for \code{term}, where \code{term}
+#' is the response variable and the other original terms of the models
+#' are used as predictors.
+#' @details Fits 2 models: 1 for the response of the fit, based on all terms
+#' except for the provided \code{term}, and a model where \code{term}
+#' is the response variable and the other original terms of the models
+#' are used as predictors. The residuals for from these models can be used
+#' to assess an assumption from a multivariate model (i.e. the response and
+#' term should be linked linearily, condiational on all the other terms)
+
+partial_residuals.lm <- function(fit, term, type = "response") {
+  formula0  = formula(fit)
+  all_vars  = all.vars(formula0)
+  response  = all_vars[1]
+  all_terms = all_vars[-1]
+  new_terms = setdiff(all_terms, term)
+
+  fit_resp <- lm(reformulate(new_terms, response), data = fit$model)
+  fit_term <- lm(reformulate(new_terms, term), data = fit$model)
+
+  return(
+    data.frame(resid_response = resid(fit_resp, type = type),
+               resid_term     = resid(fit_term, type = type))
+  )
+}
+
+
+
 #' Calculate dispersion of a model fit
 #'
 #' Calculate dispersion of glm model fit

@@ -1,3 +1,50 @@
+#' Partial plots of a linear regression fit
+#'
+#' Partial plots of a linear regression fit
+#'
+#' @author Wouter van Amsterdam
+#' @export
+#' @param fit the result of a call to \code{\link{lm}}
+#' @param terms for which terms to make the plot. Default (when omitted) is
+#' all terms in \code{fit}
+#' @param resid_type type of residuals, gets passed to \code{\link{resid}}
+#' @param what a character of what to return, either \code{"resid"} for the
+#' residual data or \code{"plot"} for the plot
+#' @return a \code{data.frame} with the results of all the partials model of
+#' the response (including all terms except for \code{term}) and the
+#' residuals of the partial model for \code{term}, where \code{term}
+#' is the response variable and the other original terms of the models
+#' are used as predictors.
+#' @seealso \code{\link{partial_residuals.lm}}
+
+partial_plots.lm <- function(fit, terms = NULL, what = "resid") {
+  formula0  = formula(fit)
+  all_vars  = all.vars(formula0)
+  response  = all_vars[1]
+  all_terms = all_vars[-1]
+
+  terms = if (!is.null(terms)) {terms} else {all_terms}
+
+  resid_data = pmap_df(list(terms), function(term) {
+    data.frame(term = term,
+               partial_residuals.lm(fit, term), stringsAsFactors = F)
+  })
+
+  p = ggplot(resid_data, aes(x = resid_term, y = resid_response)) +
+    geom_point() + geom_smooth(method = "lm", alpha = 0.15) +
+    facet_wrap(~term, scales = "free_x") +
+    theme_minimal() +
+    labs(x = "Residual of term ~ .",
+         y = paste0("Residual of ", response, " ~ ."))
+
+  if (what == "resid") {
+    print(p)
+    return(resid_data)
+  } else if (what == "plot") {
+    return(p)
+  }
+}
+
 
 #' Multiple plot function for ggplot
 #'
