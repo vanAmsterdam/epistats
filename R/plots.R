@@ -31,11 +31,11 @@ partial_plots.lm <- function(fit, terms = NULL, what = "resid") {
   })
 
   p = ggplot(resid_data, aes(x = resid_term, y = resid_response)) +
-    geom_point() + geom_smooth(method = "lm", alpha = 0.15) +
+    geom_point() +
     facet_wrap(~term, scales = "free_x") +
     theme_minimal() +
-    labs(x = "Residual of term ~ .",
-         y = paste0("Residual of ", response, " ~ ."))
+    labs(x = "Residual of partial model: 'term' ~ .",
+         y = paste0("Residual of partial model: ", response, " ~ ."))
 
   if (what == "resid") {
     print(p)

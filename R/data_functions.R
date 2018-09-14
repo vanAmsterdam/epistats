@@ -1,3 +1,101 @@
+## Check for updates in source files and curation files
+#'
+#' When updating datasets and curation files, check if there is anything
+#' new in the curation or source files. If so, update, otherwise,
+#' leave as is
+#'
+#' @author Wouter van Amsterdam, authors of stats package
+#' @export
+#' @param source The file with the curation. The last referenced file should be the ouput of curated data
+#' @param uses_here logical, does the curation file use the function \code{\link{here}}
+#' from the package with the same name to refer to files? Currently the only option
+#' @return Nothing, the curated file is updated when something had changed
+#' @import stringr
+#' @seealso \code{\link{here}}
+
+curate_update <- function(source, uses_here = TRUE) {
+  if (!uses_here) {stop("case of uses_here = FALSE is not implemented")}
+  source_lines <- readLines(source)
+  file_lines <- str_subset(source_lines, "here\\(")
+  # remove commented file lines
+  file_lines <- file_lines[!str_detect(file_lines, "^#")]
+  if (length(file_lines) == 1) {warning("no referenced files found, does the source use 'here('")}
+
+  current_md4 <- ifelse(
+    file.exists(paste0(source, ".md4")),
+    readLines(paste0(source, ".md4"))[[1]],
+    ""
+  )
+
+  source_sha <- openssl::sha224(source_lines)
+
+  file_paths <- file_lines %>%
+    map(~str_extract(.x, "(?<=here\\().*")) %>%
+    map(between_brackets) %>%
+    map(~str_remove_all(.x, "\"")) %>%
+    map(~str_split(.x, ",")[[1]]) %>%
+    map(str_trim) %>%
+    map(~do.call(here, as.vector(.x, mode = "list")))
+
+  cat("hashing files...\n")
+  file_shas <- map(file_paths, function(file_path) {
+    cat(file_path); cat("\n")
+    con <- file(system.file(file_path))
+    hash <- openssl::sha224(con)
+    close(con)
+    return(hash)
+  })
+
+  all_shas <- c(source_sha, file_shas)
+
+  sum_md4 <- openssl::md4(paste0(all_shas, collapse = ""))
+
+  if (sum_md4 == current_md4) {
+    print("curation file and source files unchanged")
+  } else {
+    print("changes detected, re-running curation")
+    if (str_detect(source, ".Rmd")) {
+      print("knitting Rmd file")
+      knitr::knit(source)
+    } else {
+      print("running source file")
+      source(source)
+    }
+    con = file(paste0(source, ".md4"))
+    writeLines(sum_md4, con)
+    close(con)
+  }
+}
+
+#' Extract text between brackets from a character
+#'
+#' Extract text between brackets from a character
+#'
+#' @export
+#' @author Wouter van Amsterdam
+#' @param x A character vector. Should start after opening parenthesis (e.g.
+#' \code{file = foo.txt)})
+#' @import stringr
+#'
+between_brackets <- function(x) {
+  x_len <- str_length(x)
+  open_count = 1
+  close_count = 0
+  i = 0
+  while (open_count > close_count & i <= x_len) {
+    i = i + 1
+    open_count  <- open_count  + str_detect(str_sub(x, i, i), "\\(")
+    close_count <- close_count + str_detect(str_sub(x, i, i), "\\)")
+  }
+  if (open_count != close_count) {
+    print(x)
+    stop("Line ended before closing bracket. Multiline calls for file paths not implemented")
+  }
+  return(str_sub(x, end = i-1))
+}
+
+
+
 #' Fill missing values in vectors by last non-empty entry
 #'
 #' Fill missing values in vectors by last non-empty entry

@@ -1,3 +1,26 @@
+#' Get concordance index from Cox model fit
+#'
+#' Get concordance index from Cox model fit
+#'
+#' @author Wouter van Amsterdam
+#' @export
+#' @param fit the result of a \code{coxph} fit
+#' @return result of \code{\link{Hmisc::rcorr.cens}}
+
+survfit_ci <- function(fit, outx = FALSE) {
+  Hmisc::rcorr.cens(x = -fit$linear.predictors, S = fit$y, outx = outx)
+}
+
+#' Get ROC curve from a logistic glm fit in 1 line
+#'
+#' Get ROC curve from a logistic glm fit in 1 line
+#'
+#' @author Wouter van Amsterdam
+#' @export
+#' @param fit the result of a glm fit with \code{family = binomial("logit")}
+#' @return an ROC plot
+
+
 #' Extract coefficients and confidence intervals from a fit
 #'
 #' Extract coefficients and confidence intervals from a fit, based on the
